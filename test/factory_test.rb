@@ -74,6 +74,28 @@ class FactoryTest < Test::Unit::TestCase
         2.times { @factory.add_attribute @name }
       end
     end
+    
+    should "not allow the same callback to be added twice" do
+      callback = mock('callback')
+      Factory::Callback.stubs(:new).returns(callback)
+      callback.stubs(:name).returns(:after_save)
+      
+      assert_raise(Factory::CallbackDefinitionError) do
+        2.times { @factory.add_callback :after_save}
+      end
+    end
+
+    context "when adding a callback" do
+      
+      setup do
+        @callback = :some_callback
+        @proc = Proc.new { }
+      end
+      
+      should "" do
+      end
+      
+    end
 
     context "when adding an attribute with a value parameter" do
 
@@ -282,6 +304,7 @@ class FactoryTest < Test::Unit::TestCase
       end
 
     end
+    
     context "when defined with a custom class name" do
 
       setup do
@@ -293,6 +316,38 @@ class FactoryTest < Test::Unit::TestCase
         assert_equal @class, @factory.build_class
       end
 
+    end
+
+    # Hmm factory_text.rb doesn't seem to be well isolated... I feel like
+    # mocks should be used for the model classes rather than the actual User
+    # models.
+    context "with some callbacks added" do
+
+      setup do
+        @user = mock('user')
+        User.stubs(:new).returns(@user)
+        @user.stubs(:arbitrary_method_one)
+        @user.stubs(:arbitrary_method_two)
+        @user.stubs(:save!)
+        @factory.add_callback(:before_save) do |model|
+          model.arbitrary_method_one
+        end
+        @factory.add_callback(:after_save) do |model|
+          model.arbitrary_method_two
+        end
+      end
+      
+      should "not call callbacks when building an instance" do
+        @user.expects(:arbitrary_method_one).never
+        @user.expects(:arbitrary_method_two).never
+        @instance = @factory.build
+      end
+      
+      should "call callbacks when creating an instance" do
+        @user.expects(:arbitrary_method_one)
+        @user.expects(:arbitrary_method_two)
+        @instance = @factory.create
+      end
     end
 
     context "with some attributes added" do

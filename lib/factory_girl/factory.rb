@@ -33,6 +33,39 @@ class Factory
     @factory_name = factory_name_for(name)
     @options      = options
     @attributes   = []
+    @callbacks    = {}
+  end
+
+  # Adds a callback that should be called on the generated model instance
+  # either before or after the save! call.
+  #  
+  # This method should be called with a block. The block's argument references
+  # the instantiated model.
+  #
+  # Example:
+  #   Factory.define :user do |f|
+  #     f.add_callback(:before_save) do |user|
+  #       user.pass_captcha
+  #     end
+  #     f.add_callback(:after_save) do |user|
+  #       user.approve_for_MasterCard_GOLD!
+  #     end
+  #   end
+  #
+  #   Factory.define :post do |f|
+  #     f.association :author, :factory => :user
+  #   end  
+  # Arguments:
+  #   name: (Symbol)
+  #     The name of the callback (either :before_save or :after_save).
+  def add_callback (name, &block)
+    callback = Callback.new(name, Proc.new { |model_instance| yield(model_instance) })
+    
+    if callback_defined?(callback.name)
+      raise CallbackDefinitionError, "Callback already defined: #{name}"
+    end
+    
+    @callbacks[name] = callback
   end
 
   # Adds an attribute that should be assigned on generated instances for this
@@ -120,7 +153,9 @@ class Factory
 
   def create (attrs = {}) #:nodoc:
     instance = build_instance(attrs, :create)
+    @callbacks[:before_save].execute(instance) if @callbacks[:before_save]
     instance.save!
+    @callbacks[:after_save].execute(instance) if @callbacks[:after_save]
     instance
   end
 
@@ -222,6 +257,10 @@ class Factory
 
   def attribute_defined? (name)
     !@attributes.detect {|attr| attr.name == name }.nil?
+  end
+  
+  def callback_defined? (name)
+    @callbacks[name]
   end
 
 end

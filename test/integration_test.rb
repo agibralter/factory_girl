@@ -25,10 +25,57 @@ class IntegrationTest < Test::Unit::TestCase
     Factory.sequence :email do |n|
       "somebody#{n}@example.com"
     end
+    
+    Factory.define :user_with_before_save, :class => User do |f|
+      f.first_name  'Nat'
+      f.last_name   'Portman'
+      f.admin       false
+      f.email {|a| "#{a.first_name}.#{a.last_name}@example.com".downcase }
+      f.add_callback(:before_save) do |u|
+        u.first_name = 'Natalie'
+      end
+    end
+    
+    Factory.define :user_with_after_save, :class => User do |f|
+      f.first_name  'Nat'
+      f.last_name   'Portman'
+      f.admin       false
+      f.email {|a| "#{a.first_name}.#{a.last_name}@example.com".downcase }
+      f.add_callback(:after_save) do |u|
+        u.last_name = 'Alba'
+        u.save!
+        u.first_name = 'Jessica'
+      end
+    end
   end
 
   def teardown
     Factory.send(:class_variable_get, "@@factories").clear
+  end
+
+  context "factories with before_save callbacks" do
+    setup do
+      @instance = Factory(:user_with_before_save)
+    end
+    
+    should "call before_save callbacks" do
+      assert_equal 'Natalie', @instance.first_name
+    end
+  end
+  
+  context "factories with after_save callbacks" do
+    setup do
+      @instance = Factory(:user_with_after_save)
+    end
+    
+    should "call after_save callbacks" do
+      assert_equal 'Alba', @instance.last_name
+    end
+    
+    should "obey model state" do
+      @found_instance = User.find_by_last_name('Alba')
+      assert_equal 'Nat', @found_instance.first_name
+    end
   end
 
   context "a generated attributes hash" do

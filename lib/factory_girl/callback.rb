@@ -17,6 +17,9 @@ class Factory
       @proc.call(model_instance)
     end
 
+    def add_to(proxy)
+      proxy.add_callback(@name, self)
+    end
   end
 
 end

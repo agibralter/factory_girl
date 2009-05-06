@@ -37,7 +37,7 @@ end
 
 spec = Gem::Specification.new do |s|
   s.name        = %q{factory_girl}
-  s.version     = "1.2.0"
+  s.version     = "1.2.1"
   s.summary     = %q{factory_girl provides a framework and DSL for defining and
                      using model instance factories.}
   s.description = %q{factory_girl provides a framework and DSL for defining and
@@ -52,7 +52,7 @@ spec = Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.rdoc"]
   s.rdoc_options = ['--line-numbers', "--main", "README.rdoc"]
 
-  s.authors = ["Joe Ferris"]
+  s.authors = ["Joe Ferris", "Aaron Gibralter"]
   s.email   = %q{jferris@thoughtbot.com}
 
   s.platform = Gem::Platform::RUBY
